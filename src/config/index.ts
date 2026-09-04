@@ -8,7 +8,7 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 // ---------------------------------------------------------------------------
 export const APP_NAME = process.env.APP_NAME || "Bacchus Beverages";
 export const NODE_ENV = process.env.NODE_ENV || "development";
-export const PORT = Number(process.env.PORT || 8080);
+export const PORT = Number(process.env.PORT || 6001);
 
 // ---------------------------------------------------------------------------
 // Database & auth
@@ -21,7 +21,7 @@ export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 // URLs
 // ---------------------------------------------------------------------------
 /** Frontend origin — used for CORS and payment redirects. */
-export const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+export const CLIENT_URL = process.env.CLIENT_URL || "https://faisal6000.ssh.bd";
 
 /** Extra allowed CORS origins, comma separated. */
 export const EXTRA_CORS_ORIGINS = (process.env.EXTRA_CORS_ORIGINS || "")
@@ -36,6 +36,24 @@ export const PUBLIC_BASE_URL =
 /** Marketing / brand site linked from emails. */
 export const BRAND_URL = process.env.BRAND_URL || CLIENT_URL;
 
+/** Admin dashboard origin — linked from staff welcome emails. */
+export const DASHBOARD_URL = process.env.DASHBOARD_URL || CLIENT_URL;
+
+/**
+ * Where the "Accept Quote" button in a client's estimate email points.
+ *
+ * Defaults to the public website: the link is client-facing, so it must land
+ * on the marketing site rather than the dashboard.
+ */
+export const QUOTE_ACCEPT_BASE_URL = (
+  process.env.QUOTE_ACCEPT_BASE_URL || CLIENT_URL
+).replace(/\/+$/, "");
+
+/** How long a client has to click Accept before the link needs reissuing. */
+export const QUOTE_ACCEPT_TOKEN_DAYS = Number(
+  process.env.QUOTE_ACCEPT_TOKEN_DAYS || 30,
+);
+
 // ---------------------------------------------------------------------------
 // Mail (SMTP)
 // ---------------------------------------------------------------------------
@@ -44,20 +62,15 @@ export const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
 export const SMTP_USER = process.env.SMTP_USER || "";
 export const SMTP_PASSWORD = process.env.SMTP_PASSWORD || "";
 export const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
-export const EMAIL_LOGO_URL =
-  process.env.EMAIL_LOGO_URL ||
-  `${PUBLIC_BASE_URL.replace(/\/$/, "")}/images/logo.png`;
-
 /**
  * Gmail credentials. Google prints app passwords in four spaced groups
  * ("abcd efgh ijkl mnop"); SMTP wants the 16 characters unbroken, so the
  * spaces are stripped here rather than relying on how it was pasted.
  */
 export const GMAIL_USER = (process.env.Nodemailer_GMAIL || "").trim();
-export const GMAIL_APP_PASSWORD = (process.env.Nodemailer_GMAIL_PASSWORD || "").replace(
-  /\s+/g,
-  "",
-);
+export const GMAIL_APP_PASSWORD = (
+  process.env.Nodemailer_GMAIL_PASSWORD || ""
+).replace(/\s+/g, "");
 
 /**
  * Resolved mail transport. Gmail wins when its credentials are present,
@@ -90,7 +103,9 @@ export const MAIL = {
  * multiple recipients. Falls back to the sending address so a submission is
  * never silently lost just because this was not configured.
  */
-export const QUOTE_NOTIFY_EMAIL = (process.env.QUOTE_NOTIFY_EMAIL || MAIL.address)
+export const QUOTE_NOTIFY_EMAIL = (
+  process.env.QUOTE_NOTIFY_EMAIL || MAIL.address
+)
   .split(",")
   .map((address) => address.trim())
   .filter(Boolean);

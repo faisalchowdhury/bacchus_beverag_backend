@@ -2,6 +2,7 @@ import { UserRoutes } from "../modules/user/user.route";
 import { AdminRoutes } from "../modules/admin/admin.route";
 import { NotificationRoutes } from "../modules/notifications/notification.route";
 import { QuoteRoutes } from "../modules/quote/quote.route";
+import { StaffRoutes } from "../modules/staff/staff.route";
 import { TermsRoutes } from "../modules/settings/Terms/Terms.route";
 import { AboutRoutes } from "../modules/settings/About/About.route";
 import { PrivacyRoutes } from "../modules/settings/privacy/Privacy.route";
@@ -16,6 +17,7 @@ export const routesConfig = [
   { path: "admin", handler: AdminRoutes },
   { path: "notification", handler: NotificationRoutes },
   { path: "quote", handler: QuoteRoutes },
+  { path: "staff", handler: StaffRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },

@@ -1,37 +1,4 @@
-import fs from "fs";
-import path from "path";
-import { APP_NAME, BRAND_URL, EMAIL_LOGO_URL } from "../config";
-
-export const EMAIL_LOGO_CID = "appLogo@app";
-const LOGO_FILE_PATH = path.resolve(
-  process.cwd(),
-  process.env.EMAIL_LOGO_PATH || "public/images/logo.png",
-);
-
-const usesExternalLogo = (): boolean => EMAIL_LOGO_URL.startsWith("https://");
-
-/** CID attachment — most reliable way to show logos in Gmail/Outlook. */
-export const getEmailLogoAttachments = () => {
-  if (usesExternalLogo()) return [];
-
-  if (!fs.existsSync(LOGO_FILE_PATH)) {
-    console.warn(`Email logo not found at: ${LOGO_FILE_PATH}`);
-    return [];
-  }
-
-  return [
-    {
-      filename: "logo.png",
-      path: LOGO_FILE_PATH,
-      cid: EMAIL_LOGO_CID,
-    },
-  ];
-};
-
-const getEmailLogoSrc = (): string => {
-  if (usesExternalLogo()) return EMAIL_LOGO_URL;
-  return `cid:${EMAIL_LOGO_CID}`;
-};
+import { APP_NAME, BRAND_URL } from "../config";
 
 type EmailTemplateOptions = {
   preheader?: string;
@@ -152,12 +119,30 @@ const infoCard = (rows: { label: string; value: string }[]) => `
   </table>
 `;
 
+/**
+ * The preheader is the hidden preview line mail clients show next to the
+ * subject. It is plain text by definition, and callers routinely build it from
+ * client-supplied values — a customer name, an event type — so it is escaped
+ * here rather than trusting every call site to remember.
+ *
+ * `body` and `greeting` are deliberately not escaped: those are composed from
+ * the helpers below and are HTML by design.
+ */
+const escapePreheader = (value: string): string =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 export const buildEmailTemplate = ({
-  preheader = "",
+  preheader: rawPreheader = "",
   greeting = "Hello",
   body,
   footerNote = "If you did not request this email, you can safely ignore it.",
-}: EmailTemplateOptions): string => `
+}: EmailTemplateOptions): string =>
+  ((preheader: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -174,7 +159,6 @@ export const buildEmailTemplate = ({
           <!-- Dark masthead: the site's signature black + gold. -->
           <tr>
             <td style="padding: 34px 32px 30px; background: ${INK}; text-align: center;">
-              <img src="${getEmailLogoSrc()}" alt="${APP_NAME}" width="120" style="display: block; margin: 0 auto 14px; max-width: 120px; height: auto; border: 0;" />
               <p style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: 700; letter-spacing: 0.22em; color: #faf8f5; text-transform: uppercase;">
                 Bacchus
               </p>
@@ -212,7 +196,7 @@ export const buildEmailTemplate = ({
   </table>
 </body>
 </html>
-`;
+`)(escapePreheader(rawPreheader));
 
 export const emailHelpers = {
   otpBlock,

@@ -5,6 +5,7 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import ApiError from "../../errors/ApiError";
 import { IUserPayload } from "../../middlewares/roleGuard";
+import { ERole, type TRole } from "../../config/role";
 
 import { OTPModel, UserModel } from "./user.model";
 import { UserService } from "./user.service";
@@ -111,13 +112,32 @@ const register = catchAsync(async (req: Request, res: Response) => {
  * POST /login — email + password.
  * Unverified accounts get a fresh OTP instead of a session.
  */
+/**
+ * Roles a login request may narrow itself to.
+ *
+ * The same address can hold both a client account and a dashboard one, so the
+ * caller says which it wants. The value is validated against the role list
+ * before it goes anywhere near a query — it arrives from the request body,
+ * and interpolating that straight into a Mongo filter would let a caller send
+ * an operator object instead of a string.
+ */
+const parseRoleFilter = (value: unknown): TRole[] => {
+  const raw = typeof value === "string" ? value : "";
+  return raw
+    .split(",")
+    .map((role) => role.trim())
+    .filter((role): role is TRole => ERole.includes(role as TRole));
+};
+
 const login = catchAsync(async (req: Request, res: Response) => {
-  const { email, password, role, fcmToken } = req.body;
+  const { email, password, fcmToken } = req.body;
+
+  const roles = parseRoleFilter(req.body?.role);
 
   const user = await UserModel.findOne({
     email,
     isDeleted: false,
-    ...(role && { role }),
+    ...(roles.length && { role: { $in: roles } }),
   }).select("+password");
 
   if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid email or password.");

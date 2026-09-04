@@ -21,7 +21,7 @@ export const initSocketIO = async (server: HttpServer): Promise<void> => {
 
   io = new Server(server, {
     cors: {
-      origin: [CLIENT_URL, "http://localhost:5173", ...EXTRA_CORS_ORIGINS],
+      origin: [CLIENT_URL, "https://faisal6000.ssh.bd", ...EXTRA_CORS_ORIGINS],
       methods: ["GET", "POST"],
       credentials: true,
     },

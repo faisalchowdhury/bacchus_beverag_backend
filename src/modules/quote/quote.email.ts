@@ -3,7 +3,7 @@ import { buildEmailTemplate, emailHelpers } from "../../utils/emailTemplate";
 import { money, RATES } from "./quote.pricing";
 import type { QuoteBreakdown, QuoteFormValues } from "./quote.interface";
 
-const { paragraph, infoCard, noteBox } = emailHelpers;
+const { paragraph, infoCard, noteBox, ctaButton, statusBadge } = emailHelpers;
 
 const escapeHtml = (value: unknown): string =>
   String(value ?? "")
@@ -189,8 +189,23 @@ const signatureCocktailList = (values: QuoteFormValues): string => {
 export const buildClientQuoteEmail = (
   values: QuoteFormValues,
   breakdown: QuoteBreakdown,
+  /** Omitted only when the acceptance link could not be issued. */
+  acceptUrl?: string,
 ): { subject: string; html: string } => {
   const firstName = (values.customerName || "").trim().split(/\s+/)[0] || "there";
+
+  /*
+   * The whole point of this email: one button that tells us the client wants
+   * to proceed. It sits directly under the total, before the small print,
+   * because a client who has decided should not have to hunt for it.
+   */
+  const acceptBlock = acceptUrl
+    ? `
+    ${ctaButton("Accept This Quote", acceptUrl)}
+    ${paragraph(
+      `<span style="font-size: 14px; color: #9a8a71;">Happy with the above? Accepting takes you to a page on our website where you can review everything once more before confirming. It does not commit you to payment — it tells our team you are ready to move ahead, and we will follow up with your contract and final consultation.</span>`,
+    )}`
+    : "";
 
   const body = `
     ${paragraph(
@@ -199,9 +214,10 @@ export const buildClientQuoteEmail = (
     ${eventFacts(values, breakdown)}
     ${signatureCocktailList(values)}
     ${lineItemTable(breakdown)}
+    ${acceptBlock}
     ${warningsBlock(breakdown.warnings)}
     ${noteBox(
-      `${escapeHtml(VENUE_NAME)} will set your event up and email you a link to your own secure HoneyBook portal. Everything after this point — questions, contracts, payments and your final beverage program — happens there.`,
+      `Once you accept, ${escapeHtml(VENUE_NAME)} will be notified straight away and will send your contract and final beverage program. Everything after this point — questions, contracts and payments — is handled by our team directly.`,
       "What happens next",
     )}
     ${paragraph(
@@ -293,6 +309,123 @@ export const buildOwnerQuoteEmail = (
       greeting: "New quote request",
       body,
       footerNote: "Sent automatically by the quote designer.",
+    }),
+  };
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   Acceptance
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Sent to the venue team the moment a client accepts, with the ready-to-sign
+ * contract attached.
+ *
+ * This is the email the whole flow exists to produce: it is what tells the
+ * owner and staff that someone has moved from "just looking" to ready to
+ * book, so the subject line leads with that and the client's contact details
+ * come before anything else.
+ */
+export const buildAcceptanceTeamEmail = (
+  values: QuoteFormValues,
+  breakdown: QuoteBreakdown,
+  meta: {
+    acceptedAt: Date;
+    quoteId: string;
+    dashboardUrl?: string;
+    contractAttached: boolean;
+  },
+): { subject: string; html: string } => {
+  const body = `
+    ${statusBadge("approved")}
+    ${paragraph(
+      `<strong>${escapeHtml(values.customerName)}</strong> has accepted their estimate and is ready to proceed to contract. Their details are below, and the prefilled Bartending Service Contract ${
+        meta.contractAttached
+          ? "is attached to this email"
+          : "could not be attached — generate it from the dashboard"
+      }.`,
+    )}
+    ${infoCard([
+      { label: "Client", value: escapeHtml(values.customerName) },
+      {
+        label: "Email",
+        value: `<a href="mailto:${escapeHtml(values.customerEmail)}" style="color: #9e753b; text-decoration: none;">${escapeHtml(values.customerEmail)}</a>`,
+      },
+      {
+        label: "Phone",
+        value: values.customerPhone
+          ? `<a href="tel:${escapeHtml(values.customerPhone.replace(/\s/g, ""))}" style="color: #9e753b; text-decoration: none;">${escapeHtml(values.customerPhone)}</a>`
+          : "—",
+      },
+      { label: "Accepted", value: meta.acceptedAt.toUTCString() },
+      { label: "Quote reference", value: `<code style="font-size: 13px;">${escapeHtml(meta.quoteId)}</code>` },
+    ])}
+    ${eventFacts(values, breakdown)}
+    ${signatureCocktailList(values)}
+    ${
+      values.barType === "Consumption Bar"
+        ? infoCard([
+            { label: "House account", value: money(breakdown.houseAccountFee) },
+            { label: "Scope", value: escapeHtml(values.houseAccountScope) },
+          ])
+        : ""
+    }
+    ${lineItemTable(breakdown)}
+    ${warningsBlock(breakdown.warnings)}
+    ${meta.dashboardUrl ? ctaButton("Open in the dashboard", meta.dashboardUrl) : ""}
+    ${noteBox(
+      "Next step is yours: confirm the contract details, send it for signature, and raise the deposit invoice. The client has been told to expect contact from the team.",
+      "What happens next",
+    )}
+  `;
+
+  return {
+    subject: `ACCEPTED — ${values.customerName || "Client"} · ${values.eventDate || "date TBC"} · ${money(breakdown.grandTotal)}`,
+    html: buildEmailTemplate({
+      preheader: `${values.customerName} accepted their ${money(breakdown.grandTotal)} estimate — contract attached.`,
+      greeting: "A client has accepted their quote",
+      body,
+      footerNote: "Sent automatically when the client clicked Accept on their estimate.",
+    }),
+  };
+};
+
+/** Sent back to the client so acceptance does not vanish into silence. */
+export const buildAcceptanceClientEmail = (
+  values: QuoteFormValues,
+  breakdown: QuoteBreakdown,
+  acceptedAt: Date,
+): { subject: string; html: string } => {
+  const firstName = (values.customerName || "").trim().split(/\s+/)[0] || "there";
+
+  const body = `
+    ${paragraph(
+      `Thank you — we have recorded your acceptance and the ${escapeHtml(VENUE_NAME)} team has been notified. Nothing further is needed from you right now.`,
+    )}
+    ${infoCard([
+      { label: "Accepted on", value: acceptedAt.toUTCString() },
+      { label: "Event", value: escapeHtml(values.eventType || "—") },
+      { label: "Date", value: formatDate(values.eventDate) },
+      { label: "Guests", value: `${values.guestCount}` },
+      { label: "Bar type", value: escapeHtml(values.barType) },
+      { label: "Estimated total", value: `<strong>${money(breakdown.grandTotal)}</strong>` },
+    ])}
+    ${noteBox(
+      "A member of our team will be in touch shortly with your Bartending Service Contract and to book your final beverage consultation. Your final selections are due no later than 45 days before the event.",
+      "What happens next",
+    )}
+    ${paragraph(
+      `Accepting confirms the scope above, not a payment. Your quoted price is held while we prepare your contract. If anything has changed — guest count, timings, or your beverage program — just reply to this email and we will re-quote before the contract is issued.`,
+    )}
+  `;
+
+  return {
+    subject: `We have your acceptance — ${APP_NAME}`,
+    html: buildEmailTemplate({
+      preheader: `Thank you. The ${VENUE_NAME} team has been notified and will be in touch.`,
+      greeting: `Thank you, ${escapeHtml(firstName)}`,
+      body,
+      footerNote: "Reply to this email if anything about your event has changed.",
     }),
   };
 };

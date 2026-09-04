@@ -9,19 +9,19 @@ wired up.
 ```bash
 npm install
 cp .env.sample .env        # then fill in DATABASE_URL, JWT_SECRET_KEY, SMTP…
-npm run dev                # http://localhost:8080
+npm run dev                #
 ```
 
 On first boot the server seeds an admin account (`SEED_ADMIN_EMAIL` /
 `SEED_ADMIN_PASSWORD`) and one placeholder document for each settings page.
 
-| Script | What it does |
-| --- | --- |
-| `npm run dev` | nodemon + ts-node, restarts on change |
-| `npm run build` | compiles to `dist/` |
-| `npm start` | runs the compiled build |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` / `lint:fix` | ESLint |
+| Script                      | What it does                          |
+| --------------------------- | ------------------------------------- |
+| `npm run dev`               | nodemon + ts-node, restarts on change |
+| `npm run build`             | compiles to `dist/`                   |
+| `npm start`                 | runs the compiled build               |
+| `npm run typecheck`         | `tsc --noEmit`                        |
+| `npm run lint` / `lint:fix` | ESLint                                |
 
 ## Layout
 
@@ -65,19 +65,19 @@ strictly one account per email, drop `role` from that index in
 
 ## Auth endpoints (`/api/v1/auth`)
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `POST` | `/register` | multipart, optional `profilePicture`; emails an OTP |
-| `POST` | `/login` | email + password |
-| `POST` | `/otp-login` | passwordless — emails a login OTP |
-| `POST` | `/verify-otp` | consumes the OTP, verifies the account, returns a token |
-| `POST` | `/resend-otp` | |
-| `POST` | `/forgot-password` | emails an OTP, returns a 15-min reset token |
-| `POST` | `/reset-password` | Bearer reset token + `{ otp, password }` |
-| `POST` | `/change-password` | signed in |
-| `GET` `PATCH` `DELETE` | `/me` | profile read / update / soft delete |
-| `GET` | `/users` | admin — search, role filter, pagination |
-| `PATCH` | `/users/:userId/block` | admin — `{ isBlocked }` |
+| Method                 | Path                   | Notes                                                   |
+| ---------------------- | ---------------------- | ------------------------------------------------------- |
+| `POST`                 | `/register`            | multipart, optional `profilePicture`; emails an OTP     |
+| `POST`                 | `/login`               | email + password                                        |
+| `POST`                 | `/otp-login`           | passwordless — emails a login OTP                       |
+| `POST`                 | `/verify-otp`          | consumes the OTP, verifies the account, returns a token |
+| `POST`                 | `/resend-otp`          |                                                         |
+| `POST`                 | `/forgot-password`     | emails an OTP, returns a 15-min reset token             |
+| `POST`                 | `/reset-password`      | Bearer reset token + `{ otp, password }`                |
+| `POST`                 | `/change-password`     | signed in                                               |
+| `GET` `PATCH` `DELETE` | `/me`                  | profile read / update / soft delete                     |
+| `GET`                  | `/users`               | admin — search, role filter, pagination                 |
+| `PATCH`                | `/users/:userId/block` | admin — `{ isBlocked }`                                 |
 
 Other mounts: `/api/v1/admin/dashboard-stats`, `/api/v1/notification`,
 `/api/v1/about`, `/api/v1/terms`, `/api/v1/privacy`, and the public HTML page at
@@ -105,7 +105,7 @@ the itemised estimate to the client and a full copy to `QUOTE_NOTIFY_EMAIL`.
 frontend. **Change a rate in one and change it in the other**, or clients will
 see one price on screen and receive another by email.
 
-A submission is saved *before* either email is attempted, so a mail outage never
+A submission is saved _before_ either email is attempted, so a mail outage never
 loses an enquiry — the response reports `clientEmailSent: false` and the UI says
 so honestly.
 
@@ -122,12 +122,12 @@ the first client who submits a quote.
 Sells one fixed product via hosted Stripe Checkout. **The webhook is the source
 of truth** — the browser redirect never marks a payment paid.
 
-| Method | Path |
-| --- | --- |
+| Method | Path                                                                                                     |
+| ------ | -------------------------------------------------------------------------------------------------------- |
 | `POST` | `/api/payments/create-checkout-session` — `{ userId, quantity?, customerEmail? }` → `{ url, sessionId }` |
-| `POST` | `/api/payments/webhook` — raw Stripe event |
-| `GET` | `/api/payments/status/:sessionId` |
-| `GET` | `/api/payments/admin/all` — admin, paginated |
+| `POST` | `/api/payments/webhook` — raw Stripe event                                                               |
+| `GET`  | `/api/payments/status/:sessionId`                                                                        |
+| `GET`  | `/api/payments/admin/all` — admin, paginated                                                             |
 
 Local webhook forwarding:
 

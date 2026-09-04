@@ -33,6 +33,9 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:4010",
   "http://localhost:4004",
+  "https://faisal6000.ssh.bd",
+  "https://faisal6003.ssh.bd",
+
   ...EXTRA_CORS_ORIGINS,
 ];
 

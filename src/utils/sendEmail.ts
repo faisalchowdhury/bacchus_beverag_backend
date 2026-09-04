@@ -2,7 +2,6 @@ import nodemailer, { Transporter } from "nodemailer";
 
 import ApiError from "../errors/ApiError";
 import { MAIL } from "../config";
-import { getEmailLogoAttachments } from "./emailTemplate";
 
 /**
  * Shared mail transport. Lives here rather than inside a feature module so
@@ -54,11 +53,21 @@ export const verifyMailConnection = async (): Promise<boolean> => {
   }
 };
 
+/** A file to send with the message, e.g. a generated contract PDF. */
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export const sendEmail = async (options: {
   to: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
+  /** Recipients who should see the message but not each other's replies. */
+  bcc?: string | string[];
+  attachments?: EmailAttachment[];
 }): Promise<void> => {
   const mailer = getMailTransporter();
 
@@ -69,7 +78,8 @@ export const sendEmail = async (options: {
       subject: options.subject,
       html: options.html,
       ...(options.replyTo && { replyTo: options.replyTo }),
-      attachments: getEmailLogoAttachments(),
+      ...(options.bcc && { bcc: options.bcc }),
+      ...(options.attachments?.length && { attachments: options.attachments }),
     });
   } catch (error: any) {
     // A rejected recipient shouldn't fail the API call that triggered the mail.

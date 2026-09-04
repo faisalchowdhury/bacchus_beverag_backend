@@ -23,6 +23,14 @@ const userSchema = new Schema<IUser>(
     isVerified: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
+
+    // Staff notification preferences. Default to on: an admin who bothers to
+    // add someone to the team almost always wants them in the loop, and
+    // silently creating a staff member who hears nothing is the worse failure.
+    notifyOnNewQuote: { type: Boolean, default: true },
+    notifyOnQuoteAccepted: { type: Boolean, default: true },
+    jobTitle: { type: String, trim: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true },
 );
