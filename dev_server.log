@@ -1,0 +1,49 @@
+
+> backend-template@1.0.0 dev
+> nodemon --exec ts-node --transpile-only src/server.ts
+
+[33m[nodemon] 3.1.4[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node --transpile-only src/server.ts`[39m
+Firebase Admin initialized.
+✅ MongoDB connected in 592ms
+⏰ Scheduler started.
+🎉 Socket.IO initialized
+🚀 Bacchus Beverages running on port 6001
+⚠️  Mail is not configured — quotes will save but nothing will be emailed.
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/login[39m ⏱️ Response Time: [93m2 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:34"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [34mPOST ✏️[39m [32m200 🎉[39m [35m/api/v1/auth/login[39m ⏱️ Response Time: [93m120 ms[39m {"size":"619","timestamp":"13-09-2026 09:04:35"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/quote/stats[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:35"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/quote/stats[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:35"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [32m200 🎉[39m [35m/api/v1/quote/stats[39m ⏱️ Response Time: [93m87 ms[39m {"size":"2692","timestamp":"13-09-2026 09:04:35"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/quote/stats[39m ⏱️ Response Time: [93m81 ms[39m {"size":0,"timestamp":"13-09-2026 09:04:35"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/quote?page=1&limit=10&sortBy=submittedAt&sortOrder=desc[39m ⏱️ Response Time: [93m1 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:42"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/quote?page=1&limit=10&sortBy=submittedAt&sortOrder=desc[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:42"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [32m200 🎉[39m [35m/api/v1/quote?page=1&limit=10&sortBy=submittedAt&sortOrder=desc[39m ⏱️ Response Time: [93m86 ms[39m {"size":"4780","timestamp":"13-09-2026 09:04:42"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/quote?page=1&limit=10&sortBy=submittedAt&sortOrder=desc[39m ⏱️ Response Time: [93m77 ms[39m {"size":0,"timestamp":"13-09-2026 09:04:42"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/staff/recipients[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:48"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/staff[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:48"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [32m200 🎉[39m [35m/api/v1/staff/recipients[39m ⏱️ Response Time: [93m92 ms[39m {"size":"532","timestamp":"13-09-2026 09:04:48"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [32m200 🎉[39m [35m/api/v1/staff[39m ⏱️ Response Time: [93m91 ms[39m {"size":"797","timestamp":"13-09-2026 09:04:48"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:49"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:04:49"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [32m200 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m81 ms[39m {"size":"871","timestamp":"13-09-2026 09:04:49"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m79 ms[39m {"size":0,"timestamp":"13-09-2026 09:04:49"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m1 ms[39m {"size":"0","timestamp":"13-09-2026 09:12:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m1 ms[39m {"size":"0","timestamp":"13-09-2026 09:12:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [32m200 🎉[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m90 ms[39m {"size":"385","timestamp":"13-09-2026 09:12:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:12:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:12:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m78 ms[39m {"size":0,"timestamp":"13-09-2026 09:12:56"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m81 ms[39m {"size":0,"timestamp":"13-09-2026 09:12:56"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m79 ms[39m {"size":0,"timestamp":"13-09-2026 09:12:56"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:13:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:13:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m78 ms[39m {"size":0,"timestamp":"13-09-2026 09:13:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/me[39m ⏱️ Response Time: [93m79 ms[39m {"size":0,"timestamp":"13-09-2026 09:13:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m0 ms[39m {"size":"0","timestamp":"13-09-2026 09:13:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [35mOPTIONS Unknown 😢☹️[39m [32m204 🎉[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m1 ms[39m {"size":"0","timestamp":"13-09-2026 09:13:55"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m78 ms[39m {"size":0,"timestamp":"13-09-2026 09:13:56"}
+[32minfo[39m: 🖥️ IP: ::1 🌐 [32mGET 🔍[39m [34m304 ❗[39m [35m/api/v1/auth/users?page=1&limit=10[39m ⏱️ Response Time: [93m77 ms[39m {"size":0,"timestamp":"13-09-2026 09:13:56"}

@@ -27,6 +27,7 @@ export type ToastServiceStyle = "Stationary Display" | "Bar Cart / Table Service
 export type HouseAccountScope =
   | "Wine & Beer Only"
   | "Signature Cocktails"
+  | "Wine & Beer + Signature Cocktails"
   | "Liquor Shelf Tiers"
   | "Full Inventory";
 
