@@ -58,6 +58,8 @@ export const RATES = {
   maxLiquorsPerCocktail: 2,
   /** Above this, the published bartender table stops and concierge review applies. */
   publishedGuestCeiling: 200,
+  /** We do not run an Open Bar for less than this, even if requested. */
+  openBarMinimumHours: 4,
 } as const;
 
 /** Bartenders included by guest count, before additional bar stations. */
@@ -212,10 +214,22 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
   const eventHours = computeEventHours(values.eventStartTime, values.eventEndTime);
   const staffedHours = eventHours > 0 ? round2(eventHours + RATES.staffingBufferHours) : 0;
 
-  // The hourly beverage rate applies only to the hours an Open Bar is offered,
-  // and an Open Bar cannot run longer than the event itself.
+  // The hourly beverage rate applies only to the hours an Open Bar is offered.
+  // An Open Bar cannot run longer than the event itself, and — short events
+  // aside — never shorter than our published minimum.
   const requestedOpenBarHours = atLeast0(Number(values.openBarHours));
-  const openBarHours = isOpenBar ? round2(Math.min(requestedOpenBarHours, eventHours)) : 0;
+  const openBarMinimumHours = Math.min(RATES.openBarMinimumHours, eventHours);
+  const openBarHours = isOpenBar
+    ? round2(Math.min(Math.max(requestedOpenBarHours, openBarMinimumHours), eventHours))
+    : 0;
+
+  if (isOpenBar && eventHours > 0 && requestedOpenBarHours < openBarMinimumHours) {
+    warnings.push(
+      eventHours < RATES.openBarMinimumHours
+        ? `Open Bar hours have been increased to ${openBarMinimumHours} — the full length of your service window, since it is shorter than our ${RATES.openBarMinimumHours}-hour Open Bar minimum.`
+        : `Open Bar service has a ${RATES.openBarMinimumHours}-hour minimum — hours have been increased to meet it.`,
+    );
+  }
 
   if (eventHours === 0) {
     warnings.push(

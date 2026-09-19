@@ -109,6 +109,28 @@ A submission is saved _before_ either email is attempted, so a mail outage never
 loses an enquiry — the response reports `clientEmailSent: false` and the UI says
 so honestly.
 
+### Business rules enforced by the rate card
+
+- **Open Bar minimum — `RATES.openBarMinimumHours` (4).** Open Bar hours below
+  the minimum are raised to it and a warning is added to the breakdown. If the
+  whole service window is shorter than 4 hours, the Open Bar covers the full
+  window instead. The wizard's hours slider also starts at the minimum, so a
+  client can't pick less on screen. Cash and Consumption bars are unaffected.
+- **Bar minimum**, **house account minimum** and the **beer & wine with liquor**
+  rule work the same way: the price is adjusted and the breakdown explains why.
+
+### Who receives quote emails
+
+| Email                        | Sent to                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| Estimate (on submit)         | The client's address from the form                                                               |
+| New quote (on submit)        | Every admin, every staff member with **New quotes** switched on, and `QUOTE_NOTIFY_EMAIL`        |
+| Quote accepted               | Every admin, every staff member with **Accepted quotes** switched on, and `QUOTE_NOTIFY_EMAIL`    |
+
+Both staff switches default to on. Blocked and deleted accounts are skipped.
+Each quote records `clientEmailSent` / `ownerEmailSent`, so you can check what
+happened to a specific submission in the database.
+
 ### Mail
 
 Gmail is used whenever `Nodemailer_GMAIL` and `Nodemailer_GMAIL_PASSWORD` are
@@ -116,6 +138,29 @@ both set (the latter is a Google **App Password**, not the account password —
 spaces are stripped). Otherwise the `SMTP_*` block is used. Credentials are
 verified on boot, so a bad password shows up in the startup log rather than on
 the first client who submits a quote.
+
+### Troubleshooting: quote emails not arriving
+
+If neither clients nor staff receive anything, including in spam, mail is almost
+certainly failing on the server rather than being filtered. Check the backend's
+**startup log** first. It prints exactly one of these:
+
+| Startup line                                                | Meaning                                                                                                   |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `📧 Mail ready via gmail as …`                               | Credentials work. Look at the per-quote lines below and at the recipient's spam/quarantine settings.      |
+| `⚠️  Mail is not configured — quotes will save but …`         | No Gmail or SMTP credentials in the server's `.env`. Nothing is sent at all.                              |
+| `⚠️  Mail credentials rejected by smtp.gmail.com — …`          | Wrong or revoked Gmail App Password (or SMTP password). Generate a new App Password and restart.          |
+
+Then submit a test quote and look for these lines at that moment:
+
+- `[quote] SMTP is not configured — quote stored but no email was sent.`
+- `[quote] Client estimate email failed: …` (client estimate)
+- `[quote] Owner notification email failed: …` (team copy)
+
+A quote with `clientEmailSent: false` and `ownerEmailSent: false` in the database
+confirms the server never managed to send. Mail settings live only in the
+server's `.env`, so fixing this means correcting them there and restarting.
+Nothing in the code needs to change.
 
 ## Stripe payments
 
