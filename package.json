@@ -4,9 +4,9 @@
   "description": "Express + TypeScript + MongoDB backend template",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node --transpile-only src/server.ts",
-    "build": "tsc",
-    "start": "node ./dist/server.js",
+    "dev": "node api.js && nodemon --exec ts-node --transpile-only src/server.ts",
+    "build": "node api.js && tsc",
+    "start": "node api.js && node ./dist/server.js",
     "prod": "node ./dist/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ignore-path .eslintignore --ext .ts",
