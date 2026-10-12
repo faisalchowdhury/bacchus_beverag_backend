@@ -48,7 +48,7 @@ export const RATES = {
 
   /** Mandatory gratuity on the package subtotal. */
   gratuityRate: 0.12,
-  /** Applied to (subtotal + gratuity − tax-exempt charges). */
+  /** NCDOR: applied to (subtotal + gratuity − staffing fee). */
   taxRate: 0.07,
   /** Charged automatically on a tab left open at the end of the event. */
   openTabGratuityRate: 0.2,
@@ -106,9 +106,20 @@ export const CHAMPAGNE_OPTIONS: {
   pricePerGuest: number;
 }[] = [
   { id: "J. Roget Brut", label: "J. Roget Brut", pricePerGuest: 5 },
+  // Three options share the $8 tier — the client picks whichever they prefer.
   {
     id: "Perelada Cava Nature Stars Reserva",
     label: "Perelada Cava Nature Stars Reserva",
+    pricePerGuest: 8,
+  },
+  {
+    id: "Roscato Sparkling Red",
+    label: "Roscato Sparkling Red",
+    pricePerGuest: 8,
+  },
+  {
+    id: "Domaine Bousquet Rose",
+    label: "Domaine Bousquet Rose",
     pricePerGuest: 8,
   },
   {
@@ -140,7 +151,7 @@ export function bartendersForGuests(guestCount: number): number {
   return last.bartenders + Math.ceil((guests - last.maxGuests) / 75);
 }
 
-/** Service hours between two "HH:MM" times. Handles events crossing midnight. */
+/** Hours in the venue rental window. Handles events crossing midnight. */
 export function computeEventHours(start: string, end: string): number {
   if (!start || !end) return 0;
   const [sh, sm] = start.split(":").map(Number);
@@ -150,6 +161,64 @@ export function computeEventHours(start: string, end: string): number {
   let minutes = eh * 60 + em - (sh * 60 + sm);
   if (minutes <= 0) minutes += 24 * 60; // crosses midnight
   return round2(minutes / 60);
+}
+
+/**
+ * Accessible Alcohol Policy: alcohol service starts an hour after the event
+ * starts and finishes an hour before it ends. The client books their venue
+ * rental window; this window is derived from it and is never entered by hand.
+ */
+export const ALCOHOL_SERVICE_BUFFER_MINUTES = 60;
+
+const DAY_MINUTES = 24 * 60;
+
+/** "HH:MM" → minutes past midnight, or null when unparseable. */
+const clockToMinutes = (value?: string): number | null => {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(value ?? "").trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+};
+
+/** Minutes past midnight → "HH:MM", wrapping events that run past midnight. */
+const minutesToClock = (value: number): string => {
+  const wrapped = ((Math.round(value) % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES;
+  return `${String(Math.floor(wrapped / 60)).padStart(2, "0")}:${String(wrapped % 60).padStart(2, "0")}`;
+};
+
+export interface AlcoholServiceWindow {
+  /** "HH:MM", or "" when the event times are not set yet. */
+  start: string;
+  end: string;
+  hours: number;
+}
+
+/**
+ * The hours alcohol may actually be served, derived from the venue rental
+ * window. Mirrored by `buildServiceWindow` in quote.contract.ts, which needs
+ * the same times at minute precision for the contract.
+ */
+export function computeAlcoholServiceWindow(
+  eventStart: string,
+  eventEnd: string,
+): AlcoholServiceWindow {
+  const start = clockToMinutes(eventStart);
+  const end = clockToMinutes(eventEnd);
+  if (start === null || end === null) return { start: "", end: "", hours: 0 };
+
+  // Work on a continuous timeline so an event ending at 2am stays after its
+  // start, and only wrap back to a clock face when formatting.
+  const endAbsolute = end > start ? end : end + DAY_MINUTES;
+  const opens = start + ALCOHOL_SERVICE_BUFFER_MINUTES;
+  const closes = Math.max(opens, endAbsolute - ALCOHOL_SERVICE_BUFFER_MINUTES);
+
+  return {
+    start: minutesToClock(opens),
+    end: minutesToClock(closes),
+    hours: round2((closes - opens) / 60),
+  };
 }
 
 /** The per-guest-per-hour liquor rate for the current selection. */
@@ -197,8 +266,10 @@ export const money = (n: number) =>
     10.  Service fee                 $150, always
          Subtotal   = 1 … 10
          Gratuity   = Subtotal × 12%
-         Tax        = (Subtotal + Gratuity − tax-exempt charges) × 7%
+         Tax        = (Subtotal + Gratuity − Staffing fee) × 7%
          Grand total = Subtotal + Gratuity + Tax
+
+   Staffing is the only tax-exempt line (NCDOR), and gratuity is taxed.
    ══════════════════════════════════════════════════════════════════════ */
 
 export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
@@ -214,20 +285,50 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
   const eventHours = computeEventHours(values.eventStartTime, values.eventEndTime);
   const staffedHours = eventHours > 0 ? round2(eventHours + RATES.staffingBufferHours) : 0;
 
+  // Alcohol may only be served between one hour after the event starts and one
+  // hour before it ends, so this — not the rental window — bounds the bar.
+  const alcoholWindow = computeAlcoholServiceWindow(
+    values.eventStartTime,
+    values.eventEndTime,
+  );
+  const alcoholServiceHours = alcoholWindow.hours;
+
   // The hourly beverage rate applies only to the hours an Open Bar is offered.
-  // An Open Bar cannot run longer than the event itself, and — short events
-  // aside — never shorter than our published minimum.
+  // An Open Bar runs inside the alcohol service window, never longer than it,
+  // and — short windows aside — never shorter than our published minimum.
   const requestedOpenBarHours = atLeast0(Number(values.openBarHours));
-  const openBarMinimumHours = Math.min(RATES.openBarMinimumHours, eventHours);
+  const openBarMinimumHours = Math.min(RATES.openBarMinimumHours, alcoholServiceHours);
   const openBarHours = isOpenBar
-    ? round2(Math.min(Math.max(requestedOpenBarHours, openBarMinimumHours), eventHours))
+    ? round2(Math.min(Math.max(requestedOpenBarHours, openBarMinimumHours), alcoholServiceHours))
     : 0;
 
-  if (isOpenBar && eventHours > 0 && requestedOpenBarHours < openBarMinimumHours) {
+  // Whatever the Open Bar does not cover is served as a Cash Bar, which the
+  // venue requires across the whole window. Guests pay per drink there, so it
+  // adds no charge to the host beyond the staffing already billed.
+  const cashBarRemainderHours = isOpenBar
+    ? round2(Math.max(0, alcoholServiceHours - openBarHours))
+    : 0;
+
+  if (isOpenBar && alcoholServiceHours > 0 && requestedOpenBarHours < openBarMinimumHours) {
     warnings.push(
-      eventHours < RATES.openBarMinimumHours
-        ? `Open Bar hours have been increased to ${openBarMinimumHours} — the full length of your service window, since it is shorter than our ${RATES.openBarMinimumHours}-hour Open Bar minimum.`
+      alcoholServiceHours < RATES.openBarMinimumHours
+        ? `Open Bar hours have been increased to ${openBarMinimumHours} — the full length of your alcohol service window, since it is shorter than our ${RATES.openBarMinimumHours}-hour Open Bar minimum.`
         : `Open Bar service has a ${RATES.openBarMinimumHours}-hour minimum — hours have been increased to meet it.`,
+    );
+  }
+
+  // The window is the rental window less two hours, so anything under a six
+  // hour booking cannot fit the Open Bar minimum. Say so plainly rather than
+  // quietly selling a shorter Open Bar than we advertise.
+  if (isOpenBar && alcoholServiceHours > 0 && alcoholServiceHours < RATES.openBarMinimumHours) {
+    warnings.push(
+      `Your alcohol service window is ${alcoholServiceHours} hrs, which is below our ${RATES.openBarMinimumHours}-hour Open Bar minimum. Extend the event to at least ${RATES.openBarMinimumHours + 2} hours for a full Open Bar, or choose a Cash or Consumption Bar — our team will confirm before anything is booked.`,
+    );
+  }
+
+  if (isOpenBar && cashBarRemainderHours > 0) {
+    warnings.push(
+      `The ${cashBarRemainderHours} hrs of your alcohol service window outside the Open Bar operate as a Cash Bar, where guests purchase their own drinks.`,
     );
   }
 
@@ -376,9 +477,11 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
 
   const gratuity = round2(subtotal * RATES.gratuityRate);
 
-  // Staffing fees are tax exempt. Drinks charged against a prepaid house
-  // account are likewise exempt.
-  const taxExemptTotal = round2(staffingFee + houseAccountFee);
+  // NCDOR requires gratuity to be taxed along with everything else, and the
+  // staffing fee is the only exempt line. A Consumption Bar's prepaid house
+  // account is NOT exempt — it buys drinks, which are taxable.
+  //   tax = ((subtotal + gratuity) − staffing fee) × 7%
+  const taxExemptTotal = staffingFee;
   const taxableBase = round2(Math.max(0, subtotal + gratuity - taxExemptTotal));
   const tax = round2(taxableBase * RATES.taxRate);
   const grandTotal = round2(subtotal + gratuity + tax);
@@ -496,7 +599,6 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
       label: "Prepaid House Account",
       detail: `${values.houseAccountScope} · ${money(RATES.houseAccountMinimum)} minimum`,
       amount: houseAccountFee,
-      taxExempt: true,
     });
   }
 
@@ -511,6 +613,10 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
     eventHours,
     staffedHours,
     openBarHours,
+    alcoholServiceHours,
+    alcoholServiceStart: alcoholWindow.start,
+    alcoholServiceEnd: alcoholWindow.end,
+    cashBarRemainderHours,
     barStations,
     baseBartenders,
     additionalBartenders,

@@ -20,7 +20,11 @@ import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
 
-import { article, type BarSectionFields, type ContractData } from "./quote.contract";
+import {
+  article,
+  type BarSectionFields,
+  type ContractData,
+} from "./quote.contract";
 
 const BODY = "Times-Roman";
 const BOLD = "Times-Bold";
@@ -79,7 +83,11 @@ class ContractWriter {
   }
 
   get contentWidth(): number {
-    return this.doc.page.width - this.doc.page.margins.left - this.doc.page.margins.right;
+    return (
+      this.doc.page.width -
+      this.doc.page.margins.left -
+      this.doc.page.margins.right
+    );
   }
 
   /** Usable vertical space left before the footer area. */
@@ -312,8 +320,14 @@ class ContractWriter {
     const lineY = doc.y;
 
     doc.save().strokeColor("#888888").lineWidth(0.8);
-    doc.moveTo(left, lineY).lineTo(left + columnWidth, lineY).stroke();
-    doc.moveTo(right, lineY).lineTo(right + columnWidth, lineY).stroke();
+    doc
+      .moveTo(left, lineY)
+      .lineTo(left + columnWidth, lineY)
+      .stroke();
+    doc
+      .moveTo(right, lineY)
+      .lineTo(right + columnWidth, lineY)
+      .stroke();
     doc.restore();
 
     doc.y = lineY + 5;
@@ -329,8 +343,14 @@ class ContractWriter {
     const dateY = Math.max(doc.y, labelY + 12) + 22;
 
     doc.save().strokeColor("#888888").lineWidth(0.8);
-    doc.moveTo(left, dateY).lineTo(left + columnWidth * 0.6, dateY).stroke();
-    doc.moveTo(right, dateY).lineTo(right + columnWidth * 0.6, dateY).stroke();
+    doc
+      .moveTo(left, dateY)
+      .lineTo(left + columnWidth * 0.6, dateY)
+      .stroke();
+    doc
+      .moveTo(right, dateY)
+      .lineTo(right + columnWidth * 0.6, dateY)
+      .stroke();
     doc.restore();
 
     doc
@@ -369,7 +389,9 @@ class ContractWriter {
 
       // Measure first so the row can be kept whole across a page break.
       doc.font(labelFont).fontSize(size);
-      const labelHeight = doc.heightOfString(sanitize(label), { width: labelWidth });
+      const labelHeight = doc.heightOfString(sanitize(label), {
+        width: labelWidth,
+      });
       const detailHeight = detail
         ? (doc.font(ITALIC).fontSize(9),
           doc.heightOfString(sanitize(detail), { width: labelWidth }))
@@ -396,7 +418,10 @@ class ContractWriter {
         .font(style === "item" ? BODY : BOLD)
         .fontSize(size)
         .fillColor(style === "grand" ? INK : INK)
-        .text(sanitize(amount), amountX, top, { width: amountWidth, align: "right" });
+        .text(sanitize(amount), amountX, top, {
+          width: amountWidth,
+          align: "right",
+        });
 
       doc.x = left;
       doc.y = Math.max(doc.y, top + labelHeight + detailHeight) + 6;
@@ -432,7 +457,7 @@ class ContractWriter {
     row("Gratuity (12%, mandatory)", "", data.payment.gratuity, "total");
     row(
       `Sales tax (7% on ${data.payment.taxableBase})`,
-      `Taxable base = subtotal + gratuity - ${data.payment.taxExemptTotal} exempt (staffing, prepaid house account)`,
+      `Taxable base = subtotal + gratuity - ${data.payment.taxExemptTotal} staffing fee (the only exempt line)`,
       data.payment.tax,
       "total",
     );
@@ -687,7 +712,10 @@ const writeExhibitA = (w: ContractWriter, data: ContractData): void => {
     "(a)",
     "All Attendees shall conduct themselves in a respectful, orderly, and professional manner. Offensive, vulgar, or derogatory language is strictly prohibited in all communications and interactions with the Owner, its personnel, and associated vendors.",
   );
-  w.clause("(b)", "The use of chewing gum on the Venue premises is strictly forbidden.");
+  w.clause(
+    "(b)",
+    "The use of chewing gum on the Venue premises is strictly forbidden.",
+  );
   w.clause(
     "(c)",
     "Smoking, vaping, or the use of cannabis in any form is not permitted. Violators will be immediately removed from the Venue.",
@@ -858,7 +886,10 @@ const writeBarSectionBody = (
 
 const writeScheduleA = (w: ContractWriter, data: ContractData): void => {
   w.doc.addPage();
-  w.gap(20).logo(104).title("Schedule A", 26).subtitle("Bartending Services Agreement");
+  w.gap(20)
+    .logo(104)
+    .title("Schedule A", 26)
+    .subtitle("Bartending Services Agreement");
 
   w.field("Effective Date:", data.effectiveDate, 0);
   w.gap(6);
@@ -880,10 +911,22 @@ const writeScheduleA = (w: ContractWriter, data: ContractData): void => {
   w.field("(e) Email Address:", data.client.email);
 
   w.heading("2. Event Description");
-  w.field("(a) Event Name/Description:", data.event.description);
-  w.field("(b) Number of Guests:", data.event.guestCount);
-  w.field("(c) Event Venue:", data.event.venue);
-  w.field("(d) Special Requests/Considerations:", data.event.specialRequests);
+  w.field("(a) Event Name/Type:", data.event.type);
+  if (data.window.known) {
+    w.field("(b) Event Start:", data.window.eventStart);
+    w.field("(c) Event End:", data.window.eventEnd);
+    w.field(
+      "(d) Alcohol Service Window:",
+      `${data.window.barOpens} – ${data.window.barCloses}`,
+    );
+  } else {
+    w.field("(b) Event Start:", "—");
+    w.field("(c) Event End:", "—");
+    w.field("(d) Alcohol Service Window:", "—");
+  }
+  w.field("(e) Number of Guests:", data.event.guestCount);
+  w.field("(f) Event Venue:", data.event.venue);
+  w.field("(g) Special Requests/Considerations:", data.event.specialRequests);
 
   w.heading('3. Bar Service Type (Selection Required. Marked With "X")');
   w.paragraph(
@@ -921,9 +964,7 @@ const writeScheduleA = (w: ContractWriter, data: ContractData): void => {
     );
   } else {
     w.paragraph(
-      `Because your event begins at ${data.window.eventStart} and ends at ${data.window.eventEnd}, the Bar ` +
-        `would open at ${data.window.barOpens} (one hour after the event start) and remain open until ` +
-        `${data.window.barCloses} (one hour before the event end).`,
+      `Since your event is scheduled from ${data.window.eventStart} until ${data.window.eventEnd}, your alcohol service window will be ${data.window.barOpens} until ${data.window.barCloses} in accordance with Chateau Des Fleures' Accessible Alcohol Policy.`,
     );
   }
 
@@ -959,102 +1000,132 @@ const writeScheduleA = (w: ContractWriter, data: ContractData): void => {
 
   /* ── Section 3a — Open Bar ───────────────────────────────────────── */
   w.subheading("Section 3a: Open Bar Details");
-  if (!data.openBar.applicable) {
-    w.note(`Not applicable - the Client selected ${article(data.barType)} ${data.barType}.`);
+  if (data.openBar.applicable) {
+    w.field(
+      "      Alcohol Service Window:",
+      `${data.window.barOpens} – ${data.window.barCloses}`,
+    );
+    w.field(
+      "      Open Bar Duration:",
+      `${data.openBar.duration} (${data.openBar.opens} – ${data.openBar.closes})`,
+    );
+    w.field("      Last Call:", data.openBar.lastCall);
+    w.note(
+      "If the Open Bar does not extend through the venue's required final hour of event time, service will convert to a Cash Bar for the remaining duration (see Section 4).",
+    );
+    w.field(
+      "(b) Mandatory Cash Bar Coverage (Venue Rule) - Cash Bar Opens:",
+      data.cashBar.opens,
+    );
+    w.field("      Cash Bar Closes:", data.cashBar.closes);
+    w.note(
+      "These fields are automatically required regardless of Open Bar selection. Cash Bar Opens must be at least 1 hour after event start; Cash Bar Closes must be at least 1 hour before event end.",
+    );
+    writeBarSectionBody(w, data.openBar, {
+      liquor: "Liquor(s) Included:",
+      wineBeer: "Wine & Beer Included:",
+    });
+  } else {
+    w.note(
+      `Not applicable - the Client selected ${article(data.barType)} ${data.barType}.`,
+    );
   }
-  w.field("(a) Open Bar Service Hours - Opens:", data.openBar.opens);
-  w.field("      Last Call:", data.openBar.lastCall);
-  w.field("      Closes:", data.openBar.closes);
-  w.note(
-    "If the Open Bar does not extend through the venue's required final hour of event time, service will convert to a Cash Bar for the remaining duration (see Section 4).",
-  );
-  w.field("(b) Mandatory Cash Bar Coverage (Venue Rule) - Cash Bar Opens:", data.cashBar.opens);
-  w.field("      Cash Bar Closes:", data.cashBar.closes);
-  w.note(
-    "These fields are automatically required regardless of Open Bar selection. Cash Bar Opens must be at least 1 hour after event start; Cash Bar Closes must be at least 1 hour before event end.",
-  );
-  writeBarSectionBody(w, data.openBar, {
-    liquor: "Liquor(s) Included:",
-    wineBeer: "Wine & Beer Included:",
-  });
 
   /* ── Section 4 — Cash Bar ────────────────────────────────────────── */
   w.heading("4. Cash Bar Details");
-  if (!data.cashBar.applicable) {
+  if (data.cashBar.applicable) {
+    w.clause(
+      "(a) Cash Bar Service Hours:",
+      "A Cash Bar will operate during the periods required by the venue policy and any additional time requested by the Client.",
+    );
+    w.field("      Opens:", data.cashBar.opens);
+    w.field("      Last Call:", data.cashBar.lastCall);
+    w.field("      Closes:", data.cashBar.closes);
+
+    w.gap(2);
+    w.doc
+      .font(BODY)
+      .fontSize(10.5)
+      .fillColor(INK)
+      .text("(b) Payment Methods Accepted:", {
+        indent: CLAUSE_INDENT,
+      });
+    w.gap(3);
+    w.bullet("All major credit and debit cards (tap, chip, swipe)");
+    w.bullet("Apple Pay / Google Pay / NFC mobile wallets");
+    w.bullet("EBT cards");
+    w.bullet("QR code payments");
+    w.bullet(
+      "Approved custom house-account arrangements for businesses. Each drink is closed out individually unless a guest explicitly opens a tab. Tabs remain open until the guest instructs the Bartender to close it or service ends. A guest may place a card on file to cover multiple individuals' drinks at their own discretion.",
+    );
+
+    writeBarSectionBody(w, data.cashBar, {
+      liquor: "Available Liquor(s) For Purchase:",
+      wineBeer: "Available Wine & Beer For Purchase:",
+    });
+  } else {
     w.note("Not applicable - no Cash Bar hours are required for this event.");
   }
-  w.clause(
-    "(a) Cash Bar Service Hours:",
-    "A Cash Bar will operate during the periods required by the venue policy and any additional time requested by the Client.",
-  );
-  w.field("      Opens:", data.cashBar.opens);
-  w.field("      Last Call:", data.cashBar.lastCall);
-  w.field("      Closes:", data.cashBar.closes);
-
-  w.gap(2);
-  w.doc.font(BODY).fontSize(10.5).fillColor(INK).text("(b) Payment Methods Accepted:", {
-    indent: CLAUSE_INDENT,
-  });
-  w.gap(3);
-  w.bullet("All major credit and debit cards (tap, chip, swipe)");
-  w.bullet("Apple Pay / Google Pay / NFC mobile wallets");
-  w.bullet("EBT cards");
-  w.bullet("QR code payments");
-  w.bullet(
-    "Approved custom house-account arrangements for businesses. Each drink is closed out individually unless a guest explicitly opens a tab. Tabs remain open until the guest instructs the Bartender to close it or service ends. A guest may place a card on file to cover multiple individuals' drinks at their own discretion.",
-  );
-
-  writeBarSectionBody(w, data.cashBar, {
-    liquor: "Available Liquor(s) For Purchase:",
-    wineBeer: "Available Wine & Beer For Purchase:",
-  });
 
   /* ── Section 5 — Consumption Bar ─────────────────────────────────── */
   w.heading("5. Consumption Bar (Prepaid House Account)");
-  if (!data.consumptionBar.applicable) {
-    w.note(`Not applicable - the Client selected ${article(data.barType)} ${data.barType}.`);
+  if (data.consumptionBar.applicable) {
+    w.paragraph(
+      'A Consumption Bar is a prepaid bar service where the Client deposits a set dollar amount ("Prepaid House Account"), which is drawn down based on actual drink consumption.',
+    );
+    w.field(
+      "(a) Prepaid House Account Amount (paid prior to the event):",
+      data.houseAccount.amount,
+    );
+    w.field("      House Account Selections:", data.houseAccount.scope);
+    w.field(
+      "(b) Service Hours - Consumption Bar Opens:",
+      data.consumptionBar.opens,
+    );
+    w.field("      Consumption Bar Closes:", data.consumptionBar.closes);
+    w.note(
+      "Transition Rule: If the Consumption Bar ends before the final hour of event time, the Bartender will convert to a Cash Bar (see Section 4) to remain compliant with venue policy.",
+    );
+
+    w.gap(2);
+    w.doc
+      .font(BODY)
+      .fontSize(10.5)
+      .fillColor(INK)
+      .text("(c) Important Terms Regarding Prepaid Amount:", {
+        indent: CLAUSE_INDENT,
+      });
+    w.gap(3);
+    w.bullet(
+      "All drink charges will be deducted from the Prepaid House Account until depleted.",
+    );
+    w.bullet("Unused prepaid funds are non-refundable and non-transferable.");
+    w.bullet(
+      "The Client is encouraged to fully utilize the prepaid amount; any remaining balance expires at the end of the event.",
+    );
+    w.bullet(
+      "Once the prepaid balance reaches zero, service will automatically convert to a Cash Bar unless the Client immediately adds additional prepaid funds.",
+    );
+    w.bullet(
+      "The Prepaid House Account functions as a gift card-style balance used for all beverages. Guests may order freely until funds run out.",
+    );
+    w.bullet(
+      "The Client may restrict what can be purchased with the prepaid balance (e.g., no shots, specific tiers, signature cocktails, etc.).",
+    );
+    w.bullet("A live running total can be provided upon request.");
+    w.bullet(
+      "Guests may pay individually using all Cash Bar payment methods (see Section 4) unless the Client adds additional prepaid funds to continue the Consumption Bar.",
+    );
+
+    writeBarSectionBody(w, data.consumptionBar, {
+      liquor: "Liquor(s) Permitted To Be Used:",
+      wineBeer: "Wine & Beer Permitted To Be Used:",
+    });
+  } else {
+    w.note(
+      `Not applicable - the Client selected ${article(data.barType)} ${data.barType}.`,
+    );
   }
-  w.paragraph(
-    'A Consumption Bar is a prepaid bar service where the Client deposits a set dollar amount ("Prepaid House Account"), which is drawn down based on actual drink consumption.',
-  );
-  w.field("(a) Prepaid House Account Amount (paid prior to the event):", data.houseAccount.amount);
-  w.field("      Account scope:", data.houseAccount.scope);
-  w.field("(b) Service Hours - Consumption Bar Opens:", data.consumptionBar.opens);
-  w.field("      Consumption Bar Closes:", data.consumptionBar.closes);
-  w.note(
-    "Transition Rule: If the Consumption Bar ends before the final hour of event time, the Bartender will convert to a Cash Bar (see Section 4) to remain compliant with venue policy.",
-  );
-
-  w.gap(2);
-  w.doc
-    .font(BODY)
-    .fontSize(10.5)
-    .fillColor(INK)
-    .text("(c) Important Terms Regarding Prepaid Amount:", { indent: CLAUSE_INDENT });
-  w.gap(3);
-  w.bullet("All drink charges will be deducted from the Prepaid House Account until depleted.");
-  w.bullet("Unused prepaid funds are non-refundable and non-transferable.");
-  w.bullet(
-    "The Client is encouraged to fully utilize the prepaid amount; any remaining balance expires at the end of the event.",
-  );
-  w.bullet(
-    "Once the prepaid balance reaches zero, service will automatically convert to a Cash Bar unless the Client immediately adds additional prepaid funds.",
-  );
-  w.bullet(
-    "The Prepaid House Account functions as a gift card-style balance used for all beverages. Guests may order freely until funds run out.",
-  );
-  w.bullet(
-    "The Client may restrict what can be purchased with the prepaid balance (e.g., no shots, specific tiers, signature cocktails, etc.).",
-  );
-  w.bullet("A live running total can be provided upon request.");
-  w.bullet(
-    "Guests may pay individually using all Cash Bar payment methods (see Section 4) unless the Client adds additional prepaid funds to continue the Consumption Bar.",
-  );
-
-  writeBarSectionBody(w, data.consumptionBar, {
-    liquor: "Liquor(s) Permitted To Be Used:",
-    wineBeer: "Wine & Beer Permitted To Be Used:",
-  });
 
   /* ── Section 6 — Payment terms ───────────────────────────────────── */
   w.heading("6. Payment Terms");
@@ -1062,13 +1133,22 @@ const writeScheduleA = (w: ContractWriter, data: ContractData): void => {
     "(a) Non-Refundable Deposit (50% of the total fee):",
     data.payment.deposit,
   );
-  w.field("(b) Total Payment for the alcohol and bar services provided above:", data.payment.total);
-  w.field("      Remaining balance, due 45 days prior to the event:", data.payment.balance);
+  w.field(
+    "(b) Total Payment for the alcohol and bar services provided above:",
+    data.payment.total,
+  );
+  w.field(
+    "      Remaining balance, due 45 days prior to the event:",
+    data.payment.balance,
+  );
   w.clause(
     "(c) Payment Schedule:",
     "The Client shall pay the Rental Payment in accordance with the payment schedule outlined on the Invoice.",
   );
-  w.clause("(d) Gratuity:", "A gratuity has been included in the total cost of these services.");
+  w.clause(
+    "(d) Gratuity:",
+    "A gratuity has been included in the total cost of these services.",
+  );
 
   w.subheading("(e) Itemised Fee Schedule");
   w.feeTable(data);
@@ -1159,7 +1239,8 @@ const stampFooters = (doc: ContractDoc, data: ContractData): void => {
     doc.page.margins.bottom = 0;
 
     const left = doc.page.margins.left;
-    const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const width =
+      doc.page.width - doc.page.margins.left - doc.page.margins.right;
     const y = doc.page.height - 52;
 
     doc
@@ -1176,7 +1257,9 @@ const stampFooters = (doc: ContractDoc, data: ContractData): void => {
       .fontSize(8)
       .fillColor(MUTED)
       .text(
-        sanitize(`Bacchus Beverages - Bartending Service Contract (${data.barType})`),
+        sanitize(
+          `Bacchus Beverages - Bartending Service Contract (${data.barType})`,
+        ),
         left,
         y,
         { width, align: "left", lineBreak: false },
@@ -1186,11 +1269,16 @@ const stampFooters = (doc: ContractDoc, data: ContractData): void => {
         align: "right",
         lineBreak: false,
       })
-      .text(sanitize(`Ref ${data.quoteId} - ${data.client.name}`), left, y + 10, {
-        width,
-        align: "left",
-        lineBreak: false,
-      });
+      .text(
+        sanitize(`Ref ${data.quoteId} - ${data.client.name}`),
+        left,
+        y + 10,
+        {
+          width,
+          align: "left",
+          lineBreak: false,
+        },
+      );
 
     doc.page.margins.bottom = savedBottom;
   }

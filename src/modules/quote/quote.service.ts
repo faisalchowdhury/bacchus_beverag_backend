@@ -55,6 +55,8 @@ const LIQUOR_MODES: LiquorMode[] = ["None", "Signature Cocktails", "Full Shelf"]
 const CHAMPAGNE_IDS: ChampagneSelection[] = [
   "J. Roget Brut",
   "Perelada Cava Nature Stars Reserva",
+  "Roscato Sparkling Red",
+  "Domaine Bousquet Rose",
   "Devaux Blanc de Noirs Champagne",
 ];
 const TOAST_STYLES: ToastServiceStyle[] = [

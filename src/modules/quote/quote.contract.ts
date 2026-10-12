@@ -8,7 +8,12 @@
  */
 
 import type { IQuoteRequest } from "./quote.model";
-import type { BarType, QuoteBreakdown, QuoteFormValues } from "./quote.interface";
+import type {
+  BarType,
+  HouseAccountScope,
+  QuoteBreakdown,
+  QuoteFormValues,
+} from "./quote.interface";
 import { money } from "./quote.pricing";
 
 /** The venue this contract and its Exhibit A were written for. */
@@ -197,10 +202,62 @@ export const buildServiceWindow = (
 export const cocktailCount = (selections: QuoteFormValues): number =>
   Math.min(Math.max(Math.round(Number(selections.signatureCocktailCount)) || 0, 0), 4);
 
+/**
+ * What a Consumption Bar's House Account Selections actually cover.
+ *
+ * A Consumption Bar is not sold as a per-guest, per-hour package, so these
+ * never borrow the Open Bar's shelf tiers or rates — the client picked what
+ * guests may order against their prepaid balance, and that is what prints.
+ */
+const HOUSE_ACCOUNT_COVER: Record<
+  HouseAccountScope,
+  { liquor: string | null; wineBeer: string | null }
+> = {
+  "Full Inventory": {
+    liquor: "Entire liquor inventory",
+    wineBeer: "Entire beer & unfortified wine inventory",
+  },
+  "Liquor Shelf Tiers": {
+    liquor: "All liquor shelf tiers",
+    wineBeer: null,
+  },
+  "Signature Cocktails": {
+    liquor: "Signature cocktails only",
+    wineBeer: null,
+  },
+  "Wine & Beer Only": {
+    liquor: null,
+    wineBeer: "Beer & unfortified wine only",
+  },
+  "Wine & Beer + Signature Cocktails": {
+    liquor: "Signature cocktails",
+    wineBeer: "Beer & unfortified wine",
+  },
+};
+
+/** How a House Account line reads, included or not. */
+const houseAccountLine = (
+  scope: HouseAccountScope,
+  key: "liquor" | "wineBeer",
+): string => {
+  const cover = HOUSE_ACCOUNT_COVER[scope];
+  if (!cover) return scope;
+  return cover[key]
+    ? `${cover[key]} — charged against the Prepaid House Account`
+    : `Not included in the House Account Selections (${scope})`;
+};
+
 const describeLiquor = (
   selections: QuoteFormValues,
   breakdown: QuoteBreakdown,
 ): string => {
+  if (selections.barType === "Consumption Bar") {
+    return houseAccountLine(selections.houseAccountScope, "liquor");
+  }
+  if (selections.barType === "Cash Bar") {
+    return "Available for purchase (guest's expense)";
+  }
+
   if (selections.liquorMode === "None") return "None selected";
 
   if (selections.liquorMode === "Full Shelf") {
@@ -225,6 +282,13 @@ const describeWineBeer = (
   selections: QuoteFormValues,
   breakdown: QuoteBreakdown,
 ): string => {
+  if (selections.barType === "Consumption Bar") {
+    return houseAccountLine(selections.houseAccountScope, "wineBeer");
+  }
+  if (selections.barType === "Cash Bar") {
+    return "Available for purchase (guest's expense)";
+  }
+
   if (selections.wineBeerTier === "None") return "None selected";
   return `${selections.wineBeerTier} beer & unfortified wine (${money(breakdown.wineBeerRate)} per guest, per hour)`;
 };
@@ -291,6 +355,7 @@ export interface ContractLineItem {
 export interface BarSectionFields {
   /** False when this section's bar type was not the one selected. */
   applicable: boolean;
+  duration?: string;
   opens: string;
   lastCall: string;
   closes: string;
@@ -321,7 +386,6 @@ export interface ContractData {
     date: string;
     type: string;
     venue: string;
-    description: string;
     guestCount: string;
     specialRequests: string;
   };
@@ -409,6 +473,7 @@ export const buildContractData = (
   const openBar: BarSectionFields = isOpenBar
     ? {
         applicable: true,
+        duration: hoursLabel(b.openBarHours),
         opens: window.primaryOpens,
         lastCall: window.primaryLastCall,
         closes: window.primaryCloses,
@@ -426,13 +491,13 @@ export const buildContractData = (
         lastCall: window.barLastCall,
         closes: window.barCloses,
         bartenders,
-        // Nothing is prepaid on a cash bar — the shelf is simply available.
-        liquor: isCashBar
-          ? "Full bar available for purchase at posted per-drink prices"
-          : shared.liquor,
-        wineBeer: isCashBar
-          ? "Beer & unfortified wine available for purchase at posted per-drink prices"
-          : shared.wineBeer,
+        // Nothing is prepaid on a cash bar — the shelf is simply available, and
+        // guests pay per drink. This holds for the hours either side of an Open
+        // or Consumption Bar too, so the package's per-guest, per-hour rates
+        // must never be printed here.
+        liquor: "Full bar available for purchase at posted per-drink prices",
+        wineBeer:
+          "Beer & unfortified wine available for purchase at posted per-drink prices",
         champagne: shared.champagne,
         glassware: shared.glassware,
         specialty: shared.specialty,
@@ -481,9 +546,6 @@ export const buildContractData = (
       date: longDate(s.eventDate),
       type: orDash(s.eventType),
       venue: s.venueLocation?.trim() || DEFAULT_VENUE,
-      description: window.known
-        ? `${orDash(s.eventType)}, ${window.eventStart} – ${window.eventEnd} (${hoursLabel(b.eventHours)})`
-        : orDash(s.eventType),
       guestCount: `${s.guestCount} (including minors)`,
       specialRequests: describeSpecialRequests(s),
     },

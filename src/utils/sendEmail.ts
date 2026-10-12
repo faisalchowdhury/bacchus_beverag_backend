@@ -82,10 +82,11 @@ export const sendEmail = async (options: {
       ...(options.attachments?.length && { attachments: options.attachments }),
     });
   } catch (error: any) {
-    // A rejected recipient shouldn't fail the API call that triggered the mail.
+    // A rejected recipient shouldn't fail the API call that triggered the mail,
+    // but we must propagate the failure so the caller knows it was not delivered.
     if (error && (error.code === "EENVELOPE" || error.responseCode === 550)) {
-      console.warn(`Email skipped (recipient rejected): ${options.to}`);
-      return;
+      console.error(`Email sending failed (recipient rejected): ${options.to}`, error);
+      throw new ApiError(400, `Email skipped (recipient rejected): ${options.to}`);
     }
     console.error("Email sending failed:", error);
     throw new ApiError(500, "Unexpected error occurred during email sending.");

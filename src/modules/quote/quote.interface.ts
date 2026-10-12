@@ -20,6 +20,8 @@ export type LiquorMode = "None" | "Signature Cocktails" | "Full Shelf";
 export type ChampagneSelection =
   | "J. Roget Brut"
   | "Perelada Cava Nature Stars Reserva"
+  | "Roscato Sparkling Red"
+  | "Domaine Bousquet Rose"
   | "Devaux Blanc de Noirs Champagne";
 
 export type ToastServiceStyle = "Stationary Display" | "Bar Cart / Table Service";
@@ -106,6 +108,13 @@ export interface QuoteBreakdown {
   eventHours: number;
   staffedHours: number;
   openBarHours: number;
+  /** Rental window less one hour at each end — when alcohol may be served. */
+  alcoholServiceHours: number;
+  /** "HH:MM" bounds of that window; empty until the event times are set. */
+  alcoholServiceStart: string;
+  alcoholServiceEnd: string;
+  /** Alcohol service hours the Open Bar does not cover, served as a Cash Bar. */
+  cashBarRemainderHours: number;
   barStations: number;
   baseBartenders: number;
   additionalBartenders: number;

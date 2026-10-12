@@ -100,8 +100,8 @@ const lineItemTable = (breakdown: QuoteBreakdown): string => {
     )}
     <tr>
       <td colspan="2" style="padding: 0 18px 12px; font-size: 11px; line-height: 1.5; color: #a89b86;">
-        Tax base = subtotal + gratuity − ${money(breakdown.taxExemptTotal)} in exempt charges
-        (staffing, and any prepaid house account).
+        Tax base = subtotal + gratuity − ${money(breakdown.taxExemptTotal)} staffing fee,
+        the only exempt line.
       </td>
     </tr>
     <tr>
@@ -135,14 +135,30 @@ const warningsBlock = (warnings: string[]): string => {
   </table>`;
 };
 
+/**
+ * Quotes stored before the alcohol service window existed carry no times, so
+ * fall back to the rule itself — the rental window less an hour at each end.
+ */
+const alcoholWindowLabel = (breakdown: QuoteBreakdown): string => {
+  const hours = breakdown.alcoholServiceHours ?? Math.max(0, breakdown.eventHours - 2);
+  if (!hours) return "—";
+  return breakdown.alcoholServiceStart && breakdown.alcoholServiceEnd
+    ? `${formatTime(breakdown.alcoholServiceStart)} – ${formatTime(breakdown.alcoholServiceEnd)} (${hours} hrs)`
+    : `${hours} hrs`;
+};
+
 const eventFacts = (values: QuoteFormValues, breakdown: QuoteBreakdown) =>
   infoCard([
     { label: "Event type", value: escapeHtml(values.eventType || "—") },
     { label: "Date", value: formatDate(values.eventDate) },
     { label: "Venue", value: escapeHtml(values.venueLocation || "—") },
     {
-      label: "Service window",
+      label: "Event window",
       value: `${formatTime(values.eventStartTime)} – ${formatTime(values.eventEndTime)} (${breakdown.eventHours} hrs)`,
+    },
+    {
+      label: "Alcohol service window",
+      value: alcoholWindowLabel(breakdown),
     },
     { label: "Guests", value: `${values.guestCount}` },
     { label: "Bar type", value: escapeHtml(values.barType) },
@@ -152,6 +168,14 @@ const eventFacts = (values: QuoteFormValues, breakdown: QuoteBreakdown) =>
     },
     ...(values.barType === "Open Bar"
       ? [{ label: "Open Bar hours", value: `${breakdown.openBarHours} hrs` }]
+      : []),
+    ...(values.barType === "Open Bar" && breakdown.cashBarRemainderHours > 0
+      ? [
+          {
+            label: "Cash Bar hours",
+            value: `${breakdown.cashBarRemainderHours} hrs — guests purchase their own drinks`,
+          },
+        ]
       : []),
   ]);
 
