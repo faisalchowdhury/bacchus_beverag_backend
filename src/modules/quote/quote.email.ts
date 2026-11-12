@@ -1,6 +1,6 @@
 import { APP_NAME, VENUE_NAME } from "../../config";
 import { buildEmailTemplate, emailHelpers } from "../../utils/emailTemplate";
-import { money, RATES } from "./quote.pricing";
+import { money, pct, RATES } from "./quote.pricing";
 import type { QuoteBreakdown, QuoteFormValues } from "./quote.interface";
 
 const { paragraph, infoCard, noteBox, ctaButton, statusBadge } = emailHelpers;
@@ -92,9 +92,9 @@ const lineItemTable = (breakdown: QuoteBreakdown): string => {
     </tr>
     ${rows}
     ${summaryRow("Subtotal", money(breakdown.subtotal), { strong: true })}
-    ${summaryRow(`Gratuity (${RATES.gratuityRate * 100}%)`, money(breakdown.gratuity), { muted: true })}
+    ${summaryRow(`Gratuity (${pct(RATES.gratuityRate)}%)`, money(breakdown.gratuity), { muted: true })}
     ${summaryRow(
-      `Tax (${RATES.taxRate * 100}% of ${money(breakdown.taxableBase)})`,
+      `Tax (${pct(RATES.taxRate)}% of ${money(breakdown.taxableBase)})`,
       money(breakdown.tax),
       { muted: true },
     )}

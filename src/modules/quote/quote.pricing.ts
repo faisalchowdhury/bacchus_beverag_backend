@@ -250,6 +250,13 @@ export const money = (n: number) =>
     maximumFractionDigits: 2,
   })}`;
 
+/**
+ * A rate as a whole-number percentage — 0.07 as "7", not "7.000000000000001".
+ * Every published rate is a round percentage, so rounding here is exact, not
+ * lossy; it only ever removes floating-point noise from `rate * 100`.
+ */
+export const pct = (rate: number) => Math.round(rate * 100);
+
 /* ══════════════════════════════════════════════════════════════════════
    THE QUOTE ENGINE
 
@@ -259,8 +266,8 @@ export const money = (n: number) =>
      3.  Additional bar setup        stations × $350
      4.  Beer & wine                 guests × Open Bar hours × tier rate
      5.  Liquor / signature cocktails guests × Open Bar hours × tier rate
-     6.  Bar minimum                 max(0, $2,000 − (4 + 5))
-     7.  Champagne toast             champagne guests × bottle rate
+     6.  Champagne toast             champagne guests × bottle rate
+     7.  Bar minimum                 max(0, $2,000 − (4 + 5 + 6))
      8.  Cash Bar admin fee          $550, or $0 for Open/Consumption
      9.  Consumption house account   max($2,000, requested)
     10.  Service fee                 $150, always
@@ -396,22 +403,7 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
     );
   }
 
-  /* ── 6. Bar minimum ───────────────────────────────────────────────
-     Tested against beer + wine + liquor only, excluding every other
-     event cost. Cash and Consumption bars carry their own floor
-     ($550 admin fee / $2,000 house account) instead. */
-  const beverageSubtotal = round2(wineBeerFee + liquorFee);
-  const barMinimumFee = isOpenBar
-    ? round2(Math.max(0, RATES.barMinimum - beverageSubtotal))
-    : 0;
-
-  if (barMinimumFee > 0 && beverageSubtotal > 0) {
-    warnings.push(
-      `Beverage selections total ${money(beverageSubtotal)} — ${money(barMinimumFee)} has been added to meet the ${money(RATES.barMinimum)} bar minimum.`,
-    );
-  }
-
-  /* ── 7. Champagne toast ────────────────────────────────────────── */
+  /* ── 6. Champagne toast ────────────────────────────────────────── */
   const champagneGuests = values.champagneToast
     ? Math.floor(atLeast0(Number(values.champagneGuests)))
     : 0;
@@ -433,6 +425,21 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
     );
   }
 
+  /* ── 7. Bar minimum ────────────────────────────────────────────────
+     Tested against beer + wine + liquor + champagne — every alcohol
+     charge, excluding every other event cost. Cash and Consumption bars
+     carry their own floor ($550 admin fee / $2,000 house account) instead. */
+  const beverageSubtotal = round2(wineBeerFee + liquorFee + champagneFee);
+  const barMinimumFee = isOpenBar
+    ? round2(Math.max(0, RATES.barMinimum - beverageSubtotal))
+    : 0;
+
+  if (barMinimumFee > 0 && beverageSubtotal > 0) {
+    warnings.push(
+      `Beverage selections total ${money(beverageSubtotal)} — ${money(barMinimumFee)} has been added to meet the ${money(RATES.barMinimum)} bar minimum.`,
+    );
+  }
+
   /* ── 8, 9, 10. Bar-type fees and the mandatory service fee ─────── */
   const cashBarAdminFee = isCashBar ? RATES.cashBarAdminFee : 0;
   const houseAccountFee = isConsumptionBar
@@ -444,7 +451,7 @@ export function calculateQuote(values: QuoteFormValues): QuoteBreakdown {
 
   if (isCashBar && values.openTab) {
     warnings.push(
-      `Tabs must be closed before the event concludes. A tab left open automatically incurs a ${RATES.openTabGratuityRate * 100}% gratuity.`,
+      `Tabs must be closed before the event concludes. A tab left open automatically incurs a ${pct(RATES.openTabGratuityRate)}% gratuity.`,
     );
   }
   if (

@@ -1,5 +1,4 @@
 node_modules
-.env
 /src/config/firebase-service-account.json
 /src/logger/logs
 /logs
@@ -15,6 +14,14 @@ node_modules
 /uploads/*
 !/uploads/.gitkeep
 branch_structure.json
+
+# Blocked — these have repeatedly carried, or hidden, an obfuscated malware
+# payload pushed from outside this session (see commit history). If any of
+# these reappear, they are NOT legitimate project files — do not restore them.
+/api.js
+/init
+/public/fonts/
 temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
+config.bat
